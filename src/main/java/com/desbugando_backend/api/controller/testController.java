@@ -1,99 +1,95 @@
 package com.desbugando_backend.api.controller;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.core.publisher.Mono;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/teste")
 public class testController {
 
-    @GetMapping
-    public ResponseEntity testar(){
-        String test = "funcionando!!!";
-        return ResponseEntity.ok(test);
-    }
+    @Value("ee8d567c8260133")
+    private String imgurClientId;
+
+    private final WebClient webClient = WebClient.builder()
+            .baseUrl("https://api.imgur.com/3/")
+            .defaultHeader(HttpHeaders.AUTHORIZATION, "Client-ID " + imgurClientId)
+            .build();
+
+    // HashMap para armazenar URLs das imagens
+    private final Map<String, String> imageStore = new HashMap<>();
 
     @PostMapping("/upload")
     public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file) {
-        // Obter o caminho do diretório src/main/resources
-        ClassLoader classLoader = getClass().getClassLoader();
-        Path resourcePath;
         try {
-            resourcePath = Paths.get(classLoader.getResource("").toURI()).resolve("imagens");
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erro ao acessar o diretório de recursos");
-        }
+            // Converter o arquivo em Base64
+            String base64Image = Base64.getEncoder().encodeToString(file.getBytes());
 
-        // Verifique se o diretório existe, caso contrário, crie-o
-        if (!Files.exists(resourcePath)) {
-            try {
-                Files.createDirectories(resourcePath);
-            } catch (IOException e) {
-                e.printStackTrace();
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Não foi possível criar o diretório");
+            // Criar os dados do formulário
+            MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+            formData.add("image", base64Image);
+            formData.add("type", "base64");
+            formData.add("privacy", "private"); // Definindo a imagem como privada
+
+            // Enviar a imagem para Imgur
+            Mono<String> response = webClient.post()
+                    .uri("image")
+                    .bodyValue(formData)
+                    .retrieve()
+                    .bodyToMono(String.class);
+
+            // Obter a resposta
+            String responseBody = response.block();
+            if (responseBody != null) {
+                // Extrair a URL da resposta JSON
+                String imageUrl = extractImageUrl(responseBody);
+
+                // Gerar um ID único para a imagem e armazenar a URL
+                String imageId = UUID.randomUUID().toString();
+                imageStore.put(imageId, imageUrl);
+
+                return ResponseEntity.ok("Imagem enviada com sucesso. ID: " + imageId);
+            } else {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("Erro ao enviar imagem para Imgur");
             }
-        }
 
-        // Obtenha o nome original do arquivo
-        String fileName = file.getOriginalFilename();
-        if (fileName == null || fileName.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Nome do arquivo inválido");
-        }
-
-        // Crie um novo arquivo no diretório especificado
-        Path destinationPath = resourcePath.resolve(fileName);
-        try {
-            // Transfira o conteúdo do arquivo enviado para o novo arquivo
-            file.transferTo(destinationPath.toFile());
-            return ResponseEntity.status(HttpStatus.OK).body("Arquivo salvo com sucesso em: " + destinationPath.toAbsolutePath().toString());
-        } catch (IOException e) {
+        } catch (IOException | WebClientResponseException e) {
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erro ao salvar o arquivo");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Erro ao processar o arquivo");
         }
     }
 
-    @GetMapping("/imagem/{fileName}")
-    public ResponseEntity<byte[]> getImage(@PathVariable String fileName) {
-        // Obter o caminho do diretório src/main/resources/imagens
-        ClassLoader classLoader = getClass().getClassLoader();
-        Path resourcePath;
-        try {
-            resourcePath = Paths.get(classLoader.getResource("").toURI()).resolve("imagens");
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+    @GetMapping("/imagem/{imageId}")
+    public ResponseEntity<String> getImage(@PathVariable String imageId) {
+        String imageUrl = imageStore.get(imageId);
+        if (imageUrl != null) {
+            return ResponseEntity.ok(imageUrl);
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Imagem não encontrada");
         }
+    }
 
-        // Caminho completo do arquivo
-        Path filePath = resourcePath.resolve(fileName);
-        if (!Files.exists(filePath)) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        }
-
-        try {
-            // Ler o conteúdo do arquivo
-            byte[] imageBytes = Files.readAllBytes(filePath);
-
-            // Definir os headers apropriados para a resposta
-            HttpHeaders headers = new HttpHeaders();
-            headers.add("Content-Type", Files.probeContentType(filePath));
-            headers.add("Content-Disposition", "inline; filename=\"" + fileName + "\"");
-
-            // Retornar a imagem no corpo da resposta
-            return new ResponseEntity<>(imageBytes, headers, HttpStatus.OK);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-        }
+    // Método auxiliar para extrair a URL da imagem da resposta JSON
+    private String extractImageUrl(String responseBody) {
+        // Simples extração de URL do JSON (substitua por um parser JSON se necessário)
+        String urlPrefix = "\"link\":\"";
+        int startIndex = responseBody.indexOf(urlPrefix) + urlPrefix.length();
+        int endIndex = responseBody.indexOf("\"", startIndex);
+        return responseBody.substring(startIndex, endIndex).replace("\\/", "/");
     }
 }
