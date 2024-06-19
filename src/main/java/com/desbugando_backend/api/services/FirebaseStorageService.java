@@ -43,15 +43,13 @@ public class FirebaseStorageService {
         Bucket bucket = storage.get(bucketName);
         bucket.create(fileName, file.getInputStream(), file.getContentType());
 
-        // Retorna o URL público do arquivo recém-carregado
-        return "https://storage.googleapis.com/" + bucketName + "/" + fileName;
+        // Obtém a URL pública do arquivo recém enviado
+        Blob blob = storage.get(bucketName, fileName);
+
+        return blob.getMediaLink();
     }
 
     public InputStream downloadFile(String fileName) {
-        // Verifica se o storage foi inicializado corretamente
-        if (storage == null) {
-            throw new IllegalStateException("Firebase Storage não inicializado corretamente.");
-        }
 
         // Faz o download do arquivo do Firebase Storage
         Blob blob = storage.get(bucketName).get(fileName);
