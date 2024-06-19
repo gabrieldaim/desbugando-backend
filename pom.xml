@@ -52,7 +52,6 @@
 			<artifactId>flyway-core</artifactId>
 			<version>8.5.6</version>
 		</dependency>
-<<<<<<< HEAD
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webflux</artifactId>
@@ -67,8 +66,6 @@
 			<artifactId>google-cloud-storage</artifactId>
 			<version>1.113.11</version> <!-- Versão pode variar, verifique a mais recente -->
 		</dependency>
-=======
->>>>>>> parent of 8b1aff2 (adicionando funções de post e get de imagem)
 	</dependencies>
 
 	<build>

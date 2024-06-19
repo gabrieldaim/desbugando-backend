@@ -28,7 +28,7 @@ public class FirebaseStorageService {
 
         // Obter o conteúdo JSON das credenciais do ambiente
         String jsonCredentials = System.getenv("FIREBASE_ADMIN_SDK_JSON");
-
+        System.out.println(GoogleCredentials.fromStream(new ByteArrayInputStream(jsonCredentials.getBytes())));
         // Inicializa o SDK do Firebase com as credenciais da variável de ambiente
         GoogleCredentials credentials = GoogleCredentials.fromStream(new ByteArrayInputStream(jsonCredentials.getBytes()));
         StorageOptions options = StorageOptions.newBuilder().setCredentials(credentials).build();
