@@ -7,10 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
 
@@ -59,7 +56,7 @@ public class AutenticacaoController {
         return ResponseEntity.badRequest().body("Email já existente.");
     }
 
-    @PostMapping("/atualizarSenha")
+    @PutMapping("/atualizarSenha")
     public ResponseEntity atualizar(@RequestBody atualizarSenhaDTO body) {
         Usuarios usuario = usuariosRepository.findByEmail(body.email()).orElseThrow(() -> new RuntimeException("Usuário não encontrado"));;
 
