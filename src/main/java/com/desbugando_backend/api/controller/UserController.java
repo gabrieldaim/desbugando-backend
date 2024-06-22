@@ -1,15 +1,16 @@
 package com.desbugando_backend.api.controller;
 
-import com.desbugando_backend.api.domain.usuarios.Usuarios;
+import com.desbugando_backend.api.domain.usuarios.*;
 import com.desbugando_backend.api.infra.security.CustomUserDetailsService;
 import com.desbugando_backend.api.infra.security.TokenService;
+import com.desbugando_backend.api.repositories.UsuariosRepository;
+import com.desbugando_backend.api.util.InformacoesToken;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/user")
@@ -17,17 +18,44 @@ public class UserController {
 
     @Autowired
     TokenService tokenService;
-
     @Autowired
     CustomUserDetailsService customUserDetailsService;
+    @Autowired
+    UsuariosRepository usuariosRepository;
 
-    @GetMapping
-    public ResponseEntity<Object> getUser(Authentication authentication){
-        Usuarios currentUser = customUserDetailsService.getCurrentUser();
-        if (currentUser == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    @GetMapping("/listar")
+    public ResponseEntity listar() {
+        Usuarios usuario = new InformacoesToken(tokenService,customUserDetailsService).getCurrentUser();
+        if(usuario.getTipo() == TiposUsuarios.ADMIN){
+            List<Usuarios> usuarios = usuariosRepository.findAll();
+            return ResponseEntity.ok(new RetornoUsuariosDTO(usuarios));
         }
+        return ResponseEntity.unprocessableEntity().body("Seu usuário não possui essa permissão");
+    }
 
-        return ResponseEntity.ok(currentUser.getEmail());
+    @PutMapping("/atualizarDados")
+    public ResponseEntity atualizarDados(@RequestBody AtualizarDadosUsuarioDTO body) {
+        Usuarios usuario = new InformacoesToken(tokenService,customUserDetailsService).getCurrentUser();
+
+        usuario.setNome(body.nome());
+        usuario.setUrlGithub(body.urlGithub());
+        usuario.setUrlLinkedin(body.urlLinkedin());
+        usuariosRepository.save(usuario);
+        return ResponseEntity.ok("Dados atualizados com sucesso!");
+    }
+
+    @DeleteMapping ("/deletar")
+    public ResponseEntity deletar(@RequestBody DeletarUsuarioDTO body) {
+        Usuarios usuarioToken = new InformacoesToken(tokenService,customUserDetailsService).getCurrentUser();
+
+        if (usuarioToken.getTipo() == TiposUsuarios.ADMIN){
+            Optional<Usuarios> usuarioDeletado = usuariosRepository.findById(body.id());
+            if(!usuarioDeletado.isEmpty()){
+                usuariosRepository.deleteById(body.id());
+                return ResponseEntity.ok("usuário deletado com sucesso");
+            }
+            return ResponseEntity.unprocessableEntity().body("Usuario não existe.");
+        }
+        return ResponseEntity.ok("Seu usuário não possui essa permissão");
     }
 }

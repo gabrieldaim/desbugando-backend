@@ -1,10 +1,12 @@
 package com.desbugando_backend.api.controller;
 
 import com.desbugando_backend.api.domain.usuarios.*;
+import com.desbugando_backend.api.infra.security.CustomUserDetailsService;
 import com.desbugando_backend.api.infra.security.TokenService;
 import com.desbugando_backend.api.repositories.UsuariosRepository;
+import com.desbugando_backend.api.util.InformacoesToken;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +21,9 @@ public class AutenticacaoController {
     private final UsuariosRepository usuariosRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
+
+    @Autowired
+    CustomUserDetailsService customUserDetailsService;
 
     @PostMapping("/login")
     public ResponseEntity login(@RequestBody LoginUsuarioDTO body){
@@ -40,24 +45,30 @@ public class AutenticacaoController {
     @PostMapping("/criar")
     public ResponseEntity criar(@RequestBody CriarLoginDTO body){
         Optional<Usuarios> usuario = usuariosRepository.findByEmail(body.email());
+        InformacoesToken informacoesToken = new InformacoesToken(tokenService,customUserDetailsService);
+        Usuarios usuarioToken = informacoesToken.getCurrentUser();
+        if (usuarioToken.getTipo() == TiposUsuarios.ADMIN) {
+            if (usuario.isEmpty()){
+                Usuarios novoUsuario = new Usuarios();
+                novoUsuario.setEmail(body.email());
+                novoUsuario.setNome(body.nome());
+                novoUsuario.setTipo(body.tipo());
+                novoUsuario.setSenhaGenerica();
+                usuariosRepository.save(novoUsuario);
 
-        if (usuario.isEmpty()){
-            Usuarios novoUsuario = new Usuarios();
-            novoUsuario.setEmail(body.email());
-            novoUsuario.setNome(body.nome());
-            novoUsuario.setTipo(body.tipo());
-            novoUsuario.setSenhaGenerica();
-            usuariosRepository.save(novoUsuario);
+                return ResponseEntity.ok(new RetornoCriacaoLoginDTO(novoUsuario.getId(),novoUsuario.getNome(),novoUsuario.getSenhaGenerica()));
 
-            return ResponseEntity.ok(new RetornoCriacaoLoginDTO(novoUsuario.getId(),novoUsuario.getNome(),novoUsuario.getSenhaGenerica()));
-
+            }else {
+                return ResponseEntity.badRequest().body("Email já existente.");
+            }
+        }else {
+            return ResponseEntity.unprocessableEntity().body("seu usuário não possui essa permissão.");
         }
 
-        return ResponseEntity.badRequest().body("Email já existente.");
     }
 
     @PutMapping("/atualizarSenha")
-    public ResponseEntity atualizar(@RequestBody atualizarSenhaDTO body) {
+    public ResponseEntity atualizar(@RequestBody AtualizarSenhaDTO body) {
         Usuarios usuario = usuariosRepository.findByEmail(body.email()).orElseThrow(() -> new RuntimeException("Usuário não encontrado"));;
 
         if (body.isTrocaDeSenhaGenerica()) {

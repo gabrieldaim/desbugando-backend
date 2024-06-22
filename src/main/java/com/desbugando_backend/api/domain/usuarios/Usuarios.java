@@ -1,6 +1,8 @@
 package com.desbugando_backend.api.domain.usuarios;
 
 import com.desbugando_backend.api.domain.matriculas.Matriculas;
+import com.desbugando_backend.api.domain.turmas.RetornoTurmaParaUsuariosDTO;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -8,8 +10,10 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.apache.commons.lang3.RandomStringUtils;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Table(name = "usuarios")
 @Entity
@@ -50,6 +54,17 @@ public class Usuarios {
     public void setSenhaGenerica(){
         String randomString = RandomStringUtils.random(5, true, true);
         this.senhaGenerica = randomString;
+    }
+
+    public List<RetornoTurmaParaUsuariosDTO> getMatriculas(){
+        return this.matriculas.stream()
+                .map(matricula -> matricula.getTurma().getDadosPrincipaisTurma())
+                .collect(Collectors.toList());
+    }
+
+    @JsonIgnore
+    public RetornoUsuariosParaTurmasDTO getDadosPrincipaisUsuario(){
+        return new RetornoUsuariosParaTurmasDTO(getId(),getNome(),getEmail(),getTipo());
     }
 }
 

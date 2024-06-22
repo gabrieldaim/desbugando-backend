@@ -1,7 +1,6 @@
 package com.desbugando_backend.api.domain.turmas;
 
-public record TurmasCriacaoDTO(
+import java.util.Date;
 
-
-) {
+public record TurmasCriacaoDTO(String nome){
 }
