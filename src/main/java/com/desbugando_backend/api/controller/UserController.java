@@ -58,4 +58,14 @@ public class UserController {
         }
         return ResponseEntity.ok("Seu usuário não possui essa permissão");
     }
+
+    @GetMapping("/senhaGenerica")
+    public ResponseEntity getSenhaGenerica(@RequestBody GetSenhaGenericaDTO body) {
+        Usuarios usuarioToken = new InformacoesToken(tokenService,customUserDetailsService).getCurrentUser();
+        if(usuarioToken.getTipo() == TiposUsuarios.ADMIN){
+            Usuarios usuario = usuariosRepository.findById(body.id()).orElseThrow(() -> new RuntimeException("Usuario não encontrado"));
+            return ResponseEntity.ok(new RetornoSenhaGenericaDTO(usuario.getSenhaGenerica()));
+        }
+        return ResponseEntity.unprocessableEntity().body("Seu usuário não possui essa permissão");
+    }
 }

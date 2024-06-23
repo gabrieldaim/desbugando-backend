@@ -1,7 +1,9 @@
 package com.desbugando_backend.api.domain.usuarios;
 
+import com.desbugando_backend.api.domain.comentarios.Comentarios;
 import com.desbugando_backend.api.domain.matriculas.Matriculas;
-import com.desbugando_backend.api.domain.turmas.RetornoTurmaParaUsuariosDTO;
+import com.desbugando_backend.api.domain.postagens.Postagens;
+import com.desbugando_backend.api.domain.turmas.RetornoTurmaParaOutrosDTO;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -10,7 +12,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.apache.commons.lang3.RandomStringUtils;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -51,20 +52,33 @@ public class Usuarios {
     @Column(name = "primeiro_acesso")
     private Boolean primeiroAcesso = true;
 
+    @JsonIgnore
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "usuarios", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Postagens> postagens;
+
+    @JsonIgnore
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "usuarios", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Comentarios> comentarios;
+
     public void setSenhaGenerica(){
         String randomString = RandomStringUtils.random(5, true, true);
         this.senhaGenerica = randomString;
     }
 
-    public List<RetornoTurmaParaUsuariosDTO> getMatriculas(){
+    public List<RetornoTurmaParaOutrosDTO> getMatriculas(){
         return this.matriculas.stream()
                 .map(matricula -> matricula.getTurma().getDadosPrincipaisTurma())
                 .collect(Collectors.toList());
     }
 
     @JsonIgnore
-    public RetornoUsuariosParaTurmasDTO getDadosPrincipaisUsuario(){
-        return new RetornoUsuariosParaTurmasDTO(getId(),getNome(),getEmail(),getTipo());
+    public RetornoUsuariosParaOutrosDTO getDadosPrincipaisUsuario(){
+        return new RetornoUsuariosParaOutrosDTO(getId(),getNome(),getEmail(),getTipo(),getUrlLinkedin(),getUrlGithub(),getUrlFoto());
+    }
+
+    @JsonIgnore
+    public String getSenhaGenerica(){
+        return this.senhaGenerica;
     }
 }
 

@@ -1,7 +1,9 @@
 package com.desbugando_backend.api.controller;
 
+import com.desbugando_backend.api.domain.matriculas.DeletarMatriculaDTO;
 import com.desbugando_backend.api.domain.matriculas.MatriculaCriacaoDTO;
 import com.desbugando_backend.api.domain.matriculas.Matriculas;
+import com.desbugando_backend.api.domain.turmas.DeletarTurmaDTO;
 import com.desbugando_backend.api.domain.turmas.Turmas;
 import com.desbugando_backend.api.domain.turmas.TurmasCriacaoDTO;
 import com.desbugando_backend.api.domain.usuarios.TiposUsuarios;
@@ -16,10 +18,9 @@ import com.desbugando_backend.api.util.InformacoesToken;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/matricula")
@@ -53,5 +54,20 @@ public class MatriculaController {
         } else {
             return ResponseEntity.unprocessableEntity().body("seu usuário não tem essa permissão.");
         }
+    }
+
+    @DeleteMapping("/deletar")
+    public ResponseEntity deletar(@RequestBody DeletarMatriculaDTO body) {
+        Usuarios usuarioToken = new InformacoesToken(tokenService,customUserDetailsService).getCurrentUser();
+
+        if (usuarioToken.getTipo() == TiposUsuarios.ADMIN){
+            Optional<Matriculas> matriculaDeletada = matriculasRepository.findById(body.id());
+            if(!matriculaDeletada.isEmpty()){
+                matriculasRepository.deleteById(body.id());
+                return ResponseEntity.ok("Matricula deletada com sucesso");
+            }
+            return ResponseEntity.unprocessableEntity().body("Matricula não existe.");
+        }
+        return ResponseEntity.ok("Seu usuário não possui essa permissão");
     }
 }
