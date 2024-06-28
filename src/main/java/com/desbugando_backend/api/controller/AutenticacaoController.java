@@ -27,19 +27,24 @@ public class AutenticacaoController {
 
     @PostMapping("/login")
     public ResponseEntity login(@RequestBody LoginUsuarioDTO body){
-        Usuarios usuario = usuariosRepository.findByEmail(body.email()).orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+        Usuarios usuario = null;
+        if (usuariosRepository.findByEmail(body.email()).isPresent()) {
+            usuario = usuariosRepository.findByEmail(body.email()).get();
+        } else {
+            return ResponseEntity.badRequest().body("usuario ou senha incorreta.");
+        }
         String token = tokenService.generateToken(usuario);
 
         if (usuario.getPrimeiroAcesso()){
             if (body.senha().equals(usuario.getSenhaGenerica())){
                 return ResponseEntity.ok(new RetornoLoginDTO(usuario.getNome(),usuario.getEmail(),token));
             }
-            return ResponseEntity.badRequest().body("senha incorreta.");
+            return ResponseEntity.badRequest().body("usuario ou senha incorreta.");
         }
         if(passwordEncoder.matches(body.senha(), usuario.getSenha())){
             return ResponseEntity.ok(new RetornoLoginDTO(usuario.getNome(),usuario.getEmail(),token));
         }
-        return ResponseEntity.badRequest().body("senha incorreta.");
+        return ResponseEntity.badRequest().body("usuario ou senha incorreta.");
     }
 
     @PostMapping("/criar")
