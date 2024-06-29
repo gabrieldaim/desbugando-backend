@@ -37,12 +37,12 @@ public class AutenticacaoController {
 
         if (usuario.getPrimeiroAcesso()){
             if (body.senha().equals(usuario.getSenhaGenerica())){
-                return ResponseEntity.ok(new RetornoLoginDTO(usuario.getNome(),usuario.getEmail(),token));
+                return ResponseEntity.ok(new RetornoLoginDTO(usuario.getNome(),usuario.getEmail(),token,usuario.getTipo(),usuario.getUrlFoto()));
             }
             return ResponseEntity.badRequest().body("usuario ou senha incorreta.");
         }
         if(passwordEncoder.matches(body.senha(), usuario.getSenha())){
-            return ResponseEntity.ok(new RetornoLoginDTO(usuario.getNome(),usuario.getEmail(),token));
+            return ResponseEntity.ok(new RetornoLoginDTO(usuario.getNome(),usuario.getEmail(),token,usuario.getTipo(),usuario.getUrlFoto()));
         }
         return ResponseEntity.badRequest().body("usuario ou senha incorreta.");
     }
