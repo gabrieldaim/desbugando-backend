@@ -29,6 +29,8 @@ public class Usuarios {
 
     private String email;
     private String nome;
+
+    @JsonIgnore
     private String senha;
 
     @Enumerated(EnumType.STRING)

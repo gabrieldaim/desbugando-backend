@@ -40,6 +40,7 @@ public class MatriculaController {
     @PostMapping("/criar")
     public ResponseEntity criar(@RequestBody MatriculaCriacaoDTO body){
         Usuarios usuarioToken = new InformacoesToken(tokenService,customUserDetailsService).getCurrentUser();
+
         if (usuarioToken.getTipo() == TiposUsuarios.ADMIN) {
             Turmas turma = turmasRepository.findById(body.idTurma()).orElseThrow(() -> new RuntimeException("Turma não encontrada"));
             Usuarios usuario = usuariosRepository.findById(body.idUsuario()).orElseThrow(() -> new RuntimeException("Usuario não encontrado"));
@@ -61,9 +62,9 @@ public class MatriculaController {
         Usuarios usuarioToken = new InformacoesToken(tokenService,customUserDetailsService).getCurrentUser();
 
         if (usuarioToken.getTipo() == TiposUsuarios.ADMIN){
-            Optional<Matriculas> matriculaDeletada = matriculasRepository.findById(body.id());
-            if(!matriculaDeletada.isEmpty()){
-                matriculasRepository.deleteById(body.id());
+            Matriculas matriculaDeletada = matriculasRepository.VerificarCadastroAluno(body.idUsuario(),body.idTurma());
+            if(matriculaDeletada != null){
+                matriculasRepository.DeletaCadastroAluno(body.idUsuario(),body.idTurma());
                 return ResponseEntity.ok("Matricula deletada com sucesso");
             }
             return ResponseEntity.unprocessableEntity().body("Matricula não existe.");

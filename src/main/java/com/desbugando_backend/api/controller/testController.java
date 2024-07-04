@@ -18,7 +18,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 @RestController
-@RequestMapping("/api/files")
+@RequestMapping("/files")
 public class testController {
 
     @Autowired
@@ -27,8 +27,9 @@ public class testController {
     @PostMapping("/upload")
     public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file) {
         try {
-            String fileUrl = storageService.uploadFile(file);
-            return ResponseEntity.ok("Arquivo carregado com sucesso. URL: " + fileUrl);
+            String folder = "fotosPerfil"; // Caminho da pasta onde você deseja salvar os arquivos
+            String fileUrl = storageService.uploadFile(file, folder);
+            return ResponseEntity.ok(fileUrl);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Falha ao carregar o arquivo: " + e.getMessage());

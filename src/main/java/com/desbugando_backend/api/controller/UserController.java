@@ -33,6 +33,11 @@ public class UserController {
         return ResponseEntity.unprocessableEntity().body("Seu usuário não possui essa permissão");
     }
 
+    @GetMapping("/testar")
+    public ResponseEntity teste() {
+        return ResponseEntity.ok("Autenticado com sucesso!");
+    }
+
     @PutMapping("/atualizarDados")
     public ResponseEntity atualizarDados(@RequestBody AtualizarDadosUsuarioDTO body) {
         Usuarios usuario = new InformacoesToken(tokenService,customUserDetailsService).getCurrentUser();

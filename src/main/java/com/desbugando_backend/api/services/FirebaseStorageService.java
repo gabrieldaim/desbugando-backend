@@ -49,6 +49,22 @@ public class FirebaseStorageService {
         return blob.getMediaLink();
     }
 
+    public String uploadFile(MultipartFile file, String folder) throws IOException {
+        // Nomeie o arquivo de forma única no Storage do Firebase
+        String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+        String filePath = folder + "/" + fileName; // Inclua a pasta no caminho do arquivo
+
+        // Faz o upload do arquivo para o Firebase Storage
+        Bucket bucket = storage.get(bucketName);
+        bucket.create(filePath, file.getInputStream(), file.getContentType());
+
+        // Obtém a URL pública do arquivo recém enviado
+        Blob blob = storage.get(bucketName, filePath);
+
+        return blob.getMediaLink();
+    }
+
+
     public InputStream downloadFile(String fileName) {
 
         // Faz o download do arquivo do Firebase Storage

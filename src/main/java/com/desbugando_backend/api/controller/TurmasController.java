@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/turmas")
@@ -34,7 +35,7 @@ public class TurmasController {
 
 
     @GetMapping("/consultar")
-    public ResponseEntity<RetornoTurmaDTO> login(){
+    public ResponseEntity<RetornoTurmaDTO> consultar(){
         InformacoesToken informacoesToken = new InformacoesToken(tokenService,customUserDetailsService);
         Usuarios usuario = informacoesToken.getCurrentUser();
         if (usuario.getTipo() == TiposUsuarios.ADMIN) {
@@ -48,6 +49,23 @@ public class TurmasController {
         }
     }
 
+    @GetMapping("/consultarTurma")
+    public ResponseEntity<?> consultarTurma(@RequestParam UUID id){
+        InformacoesToken informacoesToken = new InformacoesToken(tokenService,customUserDetailsService);
+        Usuarios usuario = informacoesToken.getCurrentUser();
+        Matriculas matricula = matriculasRepository.VerificarCadastroAluno(usuario.getId(),id);
+
+        if (usuario.getTipo() != TiposUsuarios.ADMIN && matricula == null) {
+            return ResponseEntity.unprocessableEntity().body("seu usuário não tem essa permissão.");
+        }
+        Optional<Turmas> turmaOptional = turmasRepository.findById(id);
+        if (!turmaOptional.isPresent()) {
+            return ResponseEntity.badRequest().body("Turma não encontrada");
+        }
+        Turmas turma = turmaOptional.get();
+        return ResponseEntity.ok(new RetornoTurmaEspecificaDTO(turma));
+    }
+
     @PostMapping("/criar")
     public ResponseEntity criar(@RequestBody TurmasCriacaoDTO body){
         InformacoesToken informacoesToken = new InformacoesToken(tokenService,customUserDetailsService);
@@ -58,7 +76,7 @@ public class TurmasController {
             novaTurma.setDataCriacao(dataHoraAtual.getDataCriacao());
             turmasRepository.save(novaTurma);
 
-            return ResponseEntity.ok("turma criada com sucesso!");
+            return ResponseEntity.ok(new RetornoTurmasCriacaoDTO(novaTurma.getNome(),novaTurma.getId(),novaTurma.getDataCriacao()));
         } else {
             return ResponseEntity.unprocessableEntity().body("seu usuário não tem essa permissão.");
         }
