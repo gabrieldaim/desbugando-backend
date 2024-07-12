@@ -19,6 +19,10 @@ public class DataHoraAtual {
     }
 
     public Date getDataCriacao(){
+        // Obtém a data e hora atuais
+        LocalDateTime now = LocalDateTime.now();
+        // Converte LocalDateTime para Date
+        this.dataCriacao = Date.from(now.atZone(ZoneId.systemDefault()).toInstant());
         return this.dataCriacao;
     }
 }

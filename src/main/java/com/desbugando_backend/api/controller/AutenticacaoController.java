@@ -37,12 +37,12 @@ public class AutenticacaoController {
 
         if (usuario.getPrimeiroAcesso()){
             if (body.senha().equals(usuario.getSenhaGenerica())){
-                return ResponseEntity.ok(new RetornoLoginDTO(usuario.getNome(),usuario.getEmail(),token,usuario.getTipo(),usuario.getUrlFoto()));
+                return ResponseEntity.ok(new RetornoLoginDTO(usuario.getNome(),usuario.getEmail(),token,usuario.getTipo(),usuario.getUrlFoto(),usuario.getUrlGithub(),usuario.getUrlLinkedin()));
             }
             return ResponseEntity.badRequest().body("usuario ou senha incorreta.");
         }
         if(passwordEncoder.matches(body.senha(), usuario.getSenha())){
-            return ResponseEntity.ok(new RetornoLoginDTO(usuario.getNome(),usuario.getEmail(),token,usuario.getTipo(),usuario.getUrlFoto()));
+            return ResponseEntity.ok(new RetornoLoginDTO(usuario.getNome(),usuario.getEmail(),token,usuario.getTipo(),usuario.getUrlFoto(),usuario.getUrlGithub(),usuario.getUrlLinkedin()));
         }
         return ResponseEntity.badRequest().body("usuario ou senha incorreta.");
     }
@@ -75,7 +75,9 @@ public class AutenticacaoController {
     @PutMapping("/atualizarSenha")
     public ResponseEntity atualizar(@RequestBody AtualizarSenhaDTO body) {
         Usuarios usuario = usuariosRepository.findByEmail(body.email()).orElseThrow(() -> new RuntimeException("Usuário não encontrado"));;
+        Usuarios usuarioToken = new InformacoesToken(tokenService,customUserDetailsService).getCurrentUser();
 
+    if(usuarioToken.getTipo() == TiposUsuarios.ADMIN || usuarioToken.getId().equals(usuario.getId())){
         if (body.isTrocaDeSenhaGenerica()) {
             usuario.setSenhaGenerica();
             usuario.setPrimeiroAcesso(true);
@@ -90,5 +92,7 @@ public class AutenticacaoController {
         usuariosRepository.save(usuario);
         return ResponseEntity.ok("Senha alterada com suscesso!");
         }
+        return ResponseEntity.unprocessableEntity().body("Seu usuário não possui essa permissão");
+    }
 
 }

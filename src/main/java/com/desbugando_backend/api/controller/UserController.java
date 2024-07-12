@@ -42,9 +42,16 @@ public class UserController {
     public ResponseEntity atualizarDados(@RequestBody AtualizarDadosUsuarioDTO body) {
         Usuarios usuario = new InformacoesToken(tokenService,customUserDetailsService).getCurrentUser();
 
-        usuario.setNome(body.nome());
-        usuario.setUrlGithub(body.urlGithub());
-        usuario.setUrlLinkedin(body.urlLinkedin());
+        if (body.nome() != null){
+            usuario.setNome(body.nome());
+        }
+
+        if (body.urlGithub() != null){
+            usuario.setUrlGithub(body.urlGithub());
+        }
+        if (body.urlLinkedin() != null){
+            usuario.setUrlLinkedin(body.urlLinkedin());
+        }
         usuariosRepository.save(usuario);
         return ResponseEntity.ok("Dados atualizados com sucesso!");
     }

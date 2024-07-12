@@ -1,10 +1,16 @@
 package com.desbugando_backend.api.controller;
 
+import com.desbugando_backend.api.domain.usuarios.Usuarios;
+import com.desbugando_backend.api.infra.security.CustomUserDetailsService;
+import com.desbugando_backend.api.infra.security.TokenService;
+import com.desbugando_backend.api.repositories.UsuariosRepository;
 import com.desbugando_backend.api.services.FirebaseStorageService;
+import com.desbugando_backend.api.util.InformacoesToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -24,11 +30,23 @@ public class testController {
     @Autowired
     private FirebaseStorageService storageService;
 
+    @Autowired
+    private TokenService tokenService;
+
+    @Autowired
+    private CustomUserDetailsService customUserDetailsService;
+
+    @Autowired
+    private UsuariosRepository usuariosRepository;
+
     @PostMapping("/upload")
     public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file) {
+        Usuarios usuarioToken = new InformacoesToken(tokenService,customUserDetailsService).getCurrentUser();
         try {
             String folder = "fotosPerfil"; // Caminho da pasta onde você deseja salvar os arquivos
             String fileUrl = storageService.uploadFile(file, folder);
+            usuarioToken.setUrlFoto(fileUrl);
+            usuariosRepository.save(usuarioToken);
             return ResponseEntity.ok(fileUrl);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

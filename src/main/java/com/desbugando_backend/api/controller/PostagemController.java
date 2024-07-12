@@ -24,8 +24,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/postagem")
@@ -46,18 +48,18 @@ public class PostagemController {
 
 
     @GetMapping("/listar")
-    public ResponseEntity<?> listar(@RequestBody GetPostagensDTO body){
+    public ResponseEntity<?> listar(@RequestParam UUID id){
         Usuarios usuarioToken = new InformacoesToken(tokenService,customUserDetailsService).getCurrentUser();
 
-        if (isMatriculado.isMatriculado(usuarioToken,body.turmaId())) {
-            List<Postagens> postagens = postagemRepository.listarPostagensPorTurmaId(body.turmaId());
+        if (isMatriculado.isMatriculado(usuarioToken,id)) {
+            List<Postagens> postagens = postagemRepository.listarPostagensPorTurmaId(id);
             return ResponseEntity.ok(new RetornoPostagensDTO(postagens));
         }
         return ResponseEntity.unprocessableEntity().body("usuário não matriculado na turma informada");
     }
 
     @PostMapping("/criar")
-    public ResponseEntity criar(@RequestBody CriarPostagensDTO body){
+    public ResponseEntity<?> criar(@RequestBody CriarPostagensDTO body){
         Usuarios usuarioToken = new InformacoesToken(tokenService,customUserDetailsService).getCurrentUser();
 
             Turmas turma = turmasRepository.findById(body.idTurma()).orElseThrow(() -> new RuntimeException("Turma não encontrada"));
@@ -69,9 +71,11 @@ public class PostagemController {
             postagens.setDataCriacao(dataHoraAtual.getDataCriacao());
             postagens.setPossuiImagem(body.possuiImagem());
             postagens.setUrlImagem(body.urlImagem());
-            postagemRepository.save(postagens);
+            postagens.setComentarios(new ArrayList<>());
+            postagemRepository.saveAndFlush(postagens);
 
-            return ResponseEntity.ok("Postagem criada com sucesso!");
+            List<Postagens> postagensNovas = postagemRepository.listarPostagensPorTurmaId(body.idTurma());
+            return ResponseEntity.ok(new RetornoPostagensDTO(postagensNovas));
     }
 
     @DeleteMapping("/deletar")
