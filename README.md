@@ -13,6 +13,8 @@ Este é um projeto de backend desenvolvido em Java utilizando Spring Boot. O pro
 
 Antes de iniciar o projeto, certifique-se de ter o PostgreSQL instalado e rodando na sua máquina. Você pode alterar as configurações de conexão com o banco de dados no arquivo `application.properties` localizado em `src/main/resources`.
 
+Fora isso, certifique-se de ter todas as dependencias do Maven baixadas.
+
 ### application.properties
 
 ```properties
